@@ -225,4 +225,5 @@ Q_FLOATING_ALLOCATION_POOL="start={{ fip_cidr | ipaddr(fip_start) | ipaddr('addr
 
 ## Magnum Architecture (dated)
 
-![magnum arch](https://wiki.openstack.org/wiki/File:Magnum_architecture.png)
+https://wiki.openstack.org/wiki/Magnum#Architecture
+
