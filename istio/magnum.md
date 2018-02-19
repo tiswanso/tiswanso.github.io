@@ -165,7 +165,7 @@ Task:
 ```
 
 `magnum_local.conf.j2`
-
+{% raw %}
 ```
 {% include "lconf_base.j2" %}
 
@@ -202,3 +202,4 @@ enable_service o-hm
 enable_service o-api
 {% endif %}
 ```
+{% endraw %}
