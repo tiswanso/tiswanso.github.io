@@ -203,3 +203,31 @@ enable_service o-api
 {% endif %}
 ```
 {% endraw %}
+
+`lconf_base.j2`
+{% raw %}
+```
+[[local|localrc]]
+HOST_IP={{ host_ip | default(ansible_default_ipv4['address']) }}
+ADMIN_PASSWORD=password
+MYSQL_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SWIFT_HASH=$ADMIN_PASSWORD
+SWIFT_TEMPURL_KEY=$ADMIN_PASSWORD
+
+GIT_BASE=https://git.openstack.org
+
+PUBLIC_INTERFACE={{ public_base_intf }}{% if pub_vlan is defined %}.{{ pub_vlan }}{% endif %}
+
+FLOATING_RANGE={{ fip_cidr }}
+PUBLIC_NETWORK_GATEWAY={{ fip_cidr | ipaddr(1) | ipaddr('address') }}
+Q_FLOATING_ALLOCATION_POOL="start={{ fip_cidr | ipaddr(fip_start) | ipaddr('address') }},end={{ fip_cidr | ipaddr(fip_end) | ipaddr('address') }}"
+```
+{% endraw %}
+
+## Magnum Architecture (dated)
+
+https://wiki.openstack.org/wiki/Magnum#Architecture
+
