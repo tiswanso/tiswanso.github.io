@@ -164,3 +164,40 @@ Task:
   tags: ["setup_devstack", "local_conf"]
 ```
 
+`magnum_local.conf.j2`
+```
+{% include "lconf_base.j2" %}
+
+LIBVIRT_TYPE=kvm
+
+disable_service tempest
+
+# Enable barbican service and use it to store TLS certificates
+# For details https://docs.openstack.org/developer/magnum/userguide.html#transport-layer-security
+enable_plugin barbican https://git.openstack.org/openstack/barbican {{ barbican_version | default(devstack_version) }}
+
+enable_plugin heat https://git.openstack.org/openstack/heat {{ heat_version | default(devstack_version) }}
+
+# Enable magnum plugin after dependent plugins
+enable_plugin magnum https://git.openstack.org/openstack/magnum {{ magnum_version | default(devstack_version) }}
+
+# Optional:  uncomment to enable the Magnum UI plugin in Horizon
+enable_plugin magnum-ui https://github.com/openstack/magnum-ui {{ magnum_version | default(devstack_version) }}
+
+VOLUME_BACKING_FILE_SIZE=20G
+
+{% if enable_lbaas | default(False) %}
+enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas {{ neutron_version | default(devstack_version) }}
+enable_plugin octavia https://git.openstack.org/openstack/octavia {{ octavia_version | default(devstack_version) }}
+
+# Disable LBaaS(v1) service
+disable_service q-lbaas
+# Enable LBaaS(v2) services
+enable_service q-lbaasv2
+enable_service octavia
+enable_service o-cw
+enable_service o-hk
+enable_service o-hm
+enable_service o-api
+{% endif %}
+```
