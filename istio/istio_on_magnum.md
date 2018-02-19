@@ -1,7 +1,7 @@
 # Bringup:  Istio on Openstack Magnum (devstack)
 
 Details of a bringup of Istio in a k8s cluster created with Openstack Magnum+Octavia in a devstack AIO.
-The details of the devstack Magnum bringup are [here](magnum.md)
+The details of the devstack Magnum bringup and SW versions used are [here](magnum.md)
 
 ## References
 1. [Magnum Dev Quickstart](https://docs.openstack.org/magnum/latest/contributor/quickstart.html)
@@ -14,6 +14,9 @@ The details of the devstack Magnum bringup are [here](magnum.md)
 ## Resulting k8s + Istio
 
 ![istio on k8s deployed by magnum](Magnum_istio_k8s_deployment.png)
+
+### Istio Version Info
+The `getLatestIstio` mechanism was used to pull the latest release Istio k8s manifest and istioctl binary.  At the time of this example bringup the Istio latest release version is `istio-0.5.1`.
 
 ## Bring Up Flow
 1. k8s Cluster Admin Steps

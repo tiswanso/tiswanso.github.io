@@ -14,6 +14,21 @@
 1. [devstack systemd](https://docs.openstack.org/devstack/latest/systemd.html)
 1. [Magnum Troubleshooting](https://docs.openstack.org/magnum/latest/admin/troubleshooting-guide.html)
 1. [Magnum wiki](https://wiki.openstack.org/wiki/Magnum)
+1. [Fedora Atomic k8s guide](https://www.projectatomic.io/blog/2017/09/running-kubernetes-on-fedora-atomic-26/)
+   1. [Fedora Atomic 26 k8s version mappings](https://bodhi.fedoraproject.org/updates/?packages=kubernetes&release=F26)
+
+## Version info
+
+Component | Version 
+--------- | -------
+OS--devstack host | Ubuntu 16.04.3 LTS
+devstack | stable/pike
+magnum | stable/pike
+octavia | stable/pike
+magnum k8s VM image | Fedora 26 (Atomic Host)
+kubectl on devstack host | `Client Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.5", GitCommit:"17d7182a7ccbb167074be7a87f0a68bd00d58d97", GitTreeState:"clean", BuildDate:"2017-08-31T09:14:02Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}`
+k8s server version (in fedora atomic 26 image) | `Server Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.4", GitCommit:"793658f2d7ca7f064d2bdf606519f9fe1229c381", GitTreeState:"clean", BuildDate:"2017-08-18T14:17:16Z", GoVersion:"go1.9beta2", Compiler:"gc", Platform:"linux/amd64"}`
+
 
 ## AIO / controller local.conf
 
