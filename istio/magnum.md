@@ -24,5 +24,75 @@
          run won't clobber it.
       1. see "Example Ansible Plays" section for a play to auto-patch it.
 
-### Example with obfuscated IPs
+### Example local.conf with obfuscated IPs
+
+The example below shows a devstack all-in-one setup where:
+- magnum + UI, octavia, and the other default services are started and `stable/pike` version is used.
+- 10.1.1.7 is the IP of the node & used for the openstack API
+- enp9s0.1237 is a precreated interface with access to a public GW on 172.1.1.0/24
+  - NOTE: after stacking it may be required to remove the IP for the public GW from
+    this interface--for some reason devstack or l3-agent sometimes adds it.
+- openstack FIP address pool of 172.1.1.130 - 150
+- LIBVIRT_TYPE=kvm is to force nova to setup libvirt for kvm hypervisor usage
+- max MTU for all networks = 1400 and advertised to VMs via DHCP
+
+
+NOTE: you may want to remove `disable_service tempest` from your setup if you want the tests to run.
+
+
+```shell
+[[local|localrc]]
+HOST_IP=10.1.1.7
+ADMIN_PASSWORD=password
+MYSQL_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SWIFT_HASH=$ADMIN_PASSWORD
+SWIFT_TEMPURL_KEY=$ADMIN_PASSWORD
+
+GIT_BASE=https://git.openstack.org
+
+PUBLIC_INTERFACE=enp9s0.1237
+FLOATING_RANGE=172.1.1.0/24
+PUBLIC_NETWORK_GATEWAY=172.1.1.1
+Q_FLOATING_ALLOCATION_POOL="start=172.1.1.130,end=172.1.1.150"
+
+LIBVIRT_TYPE=kvm
+
+disable_service tempest
+
+# Enable barbican service and use it to store TLS certificates
+# For details https://docs.openstack.org/developer/magnum/userguide.html#transport-layer-security
+enable_plugin barbican https://git.openstack.org/openstack/barbican stable/pike
+
+enable_plugin heat https://git.openstack.org/openstack/heat stable/pike
+
+# Enable magnum plugin after dependent plugins
+enable_plugin magnum https://git.openstack.org/openstack/magnum stable/pike
+
+# Optional:  uncomment to enable the Magnum UI plugin in Horizon
+enable_plugin magnum-ui https://github.com/openstack/magnum-ui stable/pike
+
+VOLUME_BACKING_FILE_SIZE=20G
+
+enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas stable/pike
+enable_plugin octavia https://git.openstack.org/openstack/octavia stable/pike
+
+# Disable LBaaS(v1) service
+disable_service q-lbaas
+# Enable LBaaS(v2) services
+enable_service q-lbaasv2
+enable_service octavia
+enable_service o-cw
+enable_service o-hk
+enable_service o-hm
+enable_service o-api
+
+[[post-config|/etc/neutron/neutron.conf]]
+[DEFAULT]
+advertise_mtu = True
+global_physnet_mtu = 1400
+
+```
 
