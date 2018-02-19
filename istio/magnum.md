@@ -96,3 +96,42 @@ global_physnet_mtu = 1400
 
 ```
 
+## Example Ansible Plays
+### Setup Magnum with Patches
+
+NOTE: the `git config` portion is only needed with the local cherry-pick.  If you already have a git config on
+the system then remove that task.
+
+```
+- name: bring in magnum patch needed for stable/pike
+  hosts: controller
+  tasks:
+    - name: clone magnum under stack user
+      git: repo=https://github.com/openstack/magnum
+           dest=/opt/stack/magnum
+           version={{ devstack_version }}
+      become: yes
+      become_user: stack
+      tags: ["patch_magnum"]
+
+    - name: setup git config so we can cherry-pick
+      shell: >
+             git config --global user.name "Tim Swanson" &&
+             git config --global user.email "tiswanso@cisco.com"
+      become: yes
+      become_user: stack
+      tags: ["patch_magnum"]
+
+    - name: cherry-pick patch
+      shell: >
+             git fetch https://git.openstack.org/openstack/magnum {{ item }} && git cherry-pick FETCH_HEAD
+      args:
+        chdir: /opt/stack/magnum
+      become: yes
+      become_user: stack
+      with_items:
+        - refs/changes/29/496229/17
+      tags: ["patch_magnum"]
+
+```
+
