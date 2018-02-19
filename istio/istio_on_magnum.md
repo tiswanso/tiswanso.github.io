@@ -7,7 +7,7 @@ The details of the devstack Magnum bringup and SW versions used are [here](magnu
 1. [Magnum Dev Quickstart](https://docs.openstack.org/magnum/latest/contributor/quickstart.html)
 1. [Magnum Troubleshooting](https://docs.openstack.org/magnum/latest/admin/troubleshooting-guide.html)
 1. [Octavia (LBaaS)](https://docs.openstack.org/octavia/latest/reference/introduction.html)
-1. [Neutron LBaaS Cmds](https://docs.openstack.org/mitaka/networking-guide/config-lbaas.html)
+1. [Neutron LBaaS Cmds](https://docs.openstack.org/neutron/pike/admin/config-lbaas.html)
 1. [Istio Quick Start](https://istio.io/docs/setup/kubernetes/quick-start.html)
 1. [Istio Sidecar Injection](https://istio.io/docs/setup/kubernetes/sidecar-injection.html)
 
