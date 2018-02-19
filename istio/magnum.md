@@ -165,6 +165,7 @@ Task:
 ```
 
 `magnum_local.conf.j2`
+
 ```
 {% include "lconf_base.j2" %}
 
