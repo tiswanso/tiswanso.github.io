@@ -438,3 +438,142 @@ stack@bxb-r8-vtsctrl:~/istio-0.5.1/samples/bookinfo/kube$ curl http://172.19.80.
 
 ![lbaas topo image](Magnum_octavia_k8s_istio_net_topo.png)
 
+## Extend Istio mesh to an Openstack Virtual Machine
+After following all the aforementioned steps to get magnum, openstack and istio running, the next step is to extend the Istio service mesh across Openstack VM's to allow them to participate in the service mesh. We will use the same bookinfo example with a MySql backend served by a MySql server running inside an Openstack instance.
+
+### Create a new glance image and Openstack instance
+We need a new image to host the MySql instance. You can use any OS of your preference that can support a MySql server. For this document we use an Ubuntu 16.04 image. You can skip these steps if you already have such an image in you Openstack installation.
+
+```shell
+# wget https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img
+# glance image-create --disk-format qcow2 --container-format bare --visibility public --file ./xenial-server-cloudimg-amd64-disk1.img  --name ubuntu_16.04
+# 
+```
+
+### Create a new Openstack instance
+Create a new instance. You can use the keypair that you created earlier for magnum.
+
+```shell
+# nova boot --flavor m1.medium --image ubuntu_16.04 --key-name testkey --nic net-id <your private network id> mysql
+```
+
+### Install Istio on the VM
+Log in to the newly created Openstack instance and install the Istio package
+```shell
+# wget https://storage.googleapis.com/istio-release/releases/0.5.1/deb/istio-sidecar.deb
+# sudo dpkg -i istio-sidecar.deb
+# sudo mkdir -p /etc/certs
+# sudo chown -R istio-proxy:istio-proxy /etc/certs
+```
+
+### Export and copy the Istio secrets
+```shell
+# export SA=istio.default
+# kubectl get secret $SA -o jsonpath='{.data.cert-chain\.pem}' |base64 -d  > cert-chain.pem
+# kubectl get secret $SA -o jsonpath='{.data.root-cert\.pem}' |base64 -d  > root-cert.pem
+# kubectl get secret $SA -o jsonpath='{.data.key\.pem}' |base64 -d  > key.pem
+# scp *.pem ubuntu@<your mysql instance ip>:/etc/certs/
+```
+
+### Setup DNS on the VM
+Grab the cluster IP's of your Istio pods
+```shell
+# kubectl -n istio-system get po -o wide
+```
+
+### Add those IP addresses to the MySql VM
+There are a few ways to do this, you can use dnsmasq and add the endpoints. For this document we just put the Istio endpoints inside /etc/hosts since the configuration is mostly static.
+
+```shell
+# vim /etc/hosts
+
+10.100.45.3 istio-mixer istio-mixer.istio-system istio-mixer.istio-system.svc.cluster.local
+10.100.45.2 istio-pilot istio-pilot.istio-system istio-pilot.istio-system.svc.cluster.local
+10.100.79.4 istio-ca istio-ca.istio-system istio-ca.istio-system.svc.cluster.local
+10.100.45.3 mixer-server mixer-server.istio-system
+```
+
+### Configure cluster.env and sidecar.env
+On the MySql VM we need to configure the sidecar and cluster files
+
+``` shell
+# cd /var/lib/istio/envoy
+# vim cluster.env
+
+ISTIO_SERVICE_CIDR=<your kubernetes service cidr>
+ISTIO_SYSTEM_NAMESPACE=istio-system
+CONTROL_PLANE_AUTH_POLICY=None
+```
+
+```shell
+# vim sidecar.env
+
+ISTIO_SERVICE_CIDR=<your kubernetes service cidr>
+ISTIO_INBOUND_PORTS=3306,8080
+ISTIO_SVC_IP=<your VM's private IP address>
+```
+
+### Start Istio service within the MySql VM
+Start the Istio services
+
+```shell
+# sudo service istio-auth-node-agent start
+# sudo service istio start
+```
+
+Verify both services and envoy are running correctly
+```shell
+# sudo service istio-auth-node-agent status
+# sudo service istio status
+# ps -ef | grep -i envoy
+```
+
+### Setup MySql DB and access on the VM
+We need to create the DB, tables, entries and access for bookinfo ratings on the Openstack MySql VM
+
+```shell
+# sudo apt-get update
+# sudo apt-get install mysql-server
+# sudo mysql
+   ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+   # Remote 'root' can read test.*, to avoid
+   # ERROR 1130 (HY000): Host '...' is not allowed to connect to this MySQL server
+   create user 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+   GRANT SELECT ON test.* TO 'root'@'%';
+# mysql -u root -h 127.0.0.1 --password=password < ~/github/istio/samples/bookinfo/src/mysql/mysqldb-init.sql
+```
+
+To be able to connect remotely
+```shell
+# sudo vi /etc/mysql/mysql.conf.d/mysqld.cnf
+# comment out:
+#bind-address   = 127.0.0.1
+# sudo service mysql restart
+```
+
+### Cleanup any old bookinfo deployments and redeploy for mesh expansion
+We should cleanup any old bookinfo deployment and routerules to avoid issues with testing mesh expansion
+```shell
+# cd <your istio root dir>
+# kubectl delete -f samples/bookinfo/kube/
+# kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/kube/bookinfo.yaml)
+# kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/kube/bookinfo-mysql.yaml)
+# kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/kube/bookinfo-ratings-v2-mysql.yaml)
+# kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/kube/route-rule-ratings-mysql.yaml)
+```
+
+### Delete the mysqldb service in kubernetes
+We will now delete the mysqldb service registered by the ratings-v2-mysql and recreate it pointing to our MySql VM
+
+```shell
+# kubectl delete svc mysqldb
+# istioctl register -n default mysqldb <your MySql VM's ip address> 3306
+```
+
+### Test the VM backend
+After registering the service, refresh your productpage and you should consistently see red stars in the ratings field. To test it, try to change the ratings of the books in the DB directly and refresh the page to see if the red stars update.
+
+On the MySql VM
+```shell
+# mysql -u root -ppassword -e 'use test; update ratings set rating=1 where 1;'
+```
