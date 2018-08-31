@@ -37,9 +37,10 @@ The following creates a 2 node cluster--1 master VM, 1 minion VM.  Steps are pre
 test -f ~/.ssh/id_rsa.pub || ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 nova keypair-add --pub-key ~/.ssh/id_rsa.pub testkey
 
+NAMESERVER=8.8.8.8
 MAG_FLAV=m1.small
 ATOM_IMG=$(openstack image list -f value -c Name | grep -i $atomic_image || true)
-magnum cluster-template-create --name k8s-cluster-template --image $ATOM_IMG --keypair testkey --external-network public --dns-nameserver 8.8.8.8 --flavor $MAG_FLAV --docker-volume-size 5 --network-driver flannel --coe kubernetes
+magnum cluster-template-create --name k8s-cluster-template --image $ATOM_IMG --keypair testkey --external-network public --dns-nameserver $NAMESERVER --flavor $MAG_FLAV --docker-volume-size 5 --network-driver flannel --coe kubernetes
 
 magnum cluster-create --name k8s-cluster --cluster-template k8s-cluster-template --node-count 1
 
